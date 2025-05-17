@@ -129,7 +129,7 @@
       { name: "札幌", lat: 43.0747, lon: 141.3419, address: "北海道札幌市清田区清田1条1丁目1-5" },
       { name: "石狩", lat: 43.1992, lon: 141.3214, address: "北海道石狩市新港南2丁目733-1" },
       { name: "かみのやま", lat: 38.1532, lon: 140.3225, address: "山形県上山市みはらしの丘21番" },
-      { name: "仙台", lat: 38.2533, lon: 140.8828, address: "宮城県仙台市宮城野区中野三丁目2-2" },
+      { name: "富谷", lat: 38.392458, lon: 140.878703, address: "宮城県富谷氏高屋敷26" },
       { name: "つくば", lat: 36.0576, lon: 140.1186, address: "茨城県つくば市学園の森2-19" },
       { name: "前橋", lat: 36.3842, lon: 139.0633, address: "群馬県前橋市鶴光路町137-2" },
       { name: "群馬明和", lat: 36.2333, lon: 139.4833, address: "群馬県邑楽郡明和町矢島35-1" },
@@ -137,7 +137,7 @@
       { name: "入間", lat: 35.8353, lon: 139.3936, address: "埼玉県入間市宮寺3169-2" },
       { name: "新三郷", lat: 35.8845, lon: 139.8712, address: "埼玉県三郷市新三郷ららシティ3-1-2" },
       { name: "幕張", lat: 35.6598, lon: 140.0433, address: "千葉県千葉市美浜区豊砂1-4" },
-      { name: "千葉ＮＴ", lat: 35.8058, lon: 140.0986, address: "千葉県印西市泉野3-1186-4" },
+      { name: "千葉ニュータウン", lat: 35.8058, lon: 140.0986, address: "千葉県印西市泉野3-1186-4" },
       { name: "金沢シーサイド", lat: 35.3701, lon: 139.6247, address: "神奈川県横浜市金沢区幸浦2-6" },
       { name: "川崎", lat: 35.5403, lon: 139.7037, address: "神奈川県川崎市川崎区池上新町3-1-4" },
       { name: "多摩境", lat: 35.6066, lon: 139.3574, address: "東京都町田市小山ヶ丘3-6-1" },
@@ -164,44 +164,42 @@
     const savedIndexes = JSON.parse(localStorage.getItem("selectedCostcos") || "[]");
 
     allStores.forEach((store, i) => {
-      const id = `store-${i}`;
       const label = document.createElement("label");
       const cb = document.createElement("input");
       cb.type = "checkbox";
       cb.value = i;
-      cb.id = id;
-      if (savedIndexes.includes(i)) cb.checked = true;
+      if (savedIndexes.includes(i)) cb.checked = true; 
       label.appendChild(cb);
       label.append(store.name);
       checkboxContainer.appendChild(label);
     });
 
+    function selectAll() {
+      document.querySelectorAll("#checkboxes input").forEach(cb => cb.checked = true);
+      updateDisplay();
+    }
+    function deselectAll() {
+      document.querySelectorAll("#checkboxes input").forEach(cb => cb.checked = false);
+      updateDisplay();
+    }
+
     function getSelectedIndexes() {
-      return Array.from(checkboxContainer.querySelectorAll("input:checked"))
+      return Array.from(document.querySelectorAll("#checkboxes input:checked"))
                   .map(el => parseInt(el.value));
     }
 
     function updateDisplay() {
-      const sel = getSelectedIndexes();
-      localStorage.setItem("selectedCostcos", JSON.stringify(sel));
-      renderStores(sel.map(i => allStores[i]));
+      localStorage.setItem("selectedCostcos", JSON.stringify(getSelectedIndexes()));
+      renderStores(getSelectedIndexes().map(i => allStores[i]));
     }
 
-    function selectAll() {
-      checkboxContainer.querySelectorAll("input").forEach(cb => cb.checked = true);
-      updateDisplay();
-    }
-    function deselectAll() {
-      checkboxContainer.querySelectorAll("input").forEach(cb => cb.checked = false);
-      updateDisplay();
-    }
-
-    checkboxContainer.addEventListener("change", updateDisplay);
+    document.getElementById("checkboxes")
+      .addEventListener("change", updateDisplay);
     updateDisplay();
 
     function renderStores(stores) {
-      const c = document.getElementById("container");
-      c.innerHTML = "";
+      const container = document.getElementById("container");
+      container.innerHTML = "";
       stores.forEach(store => {
         const card = document.createElement("div");
         card.className = "card";
@@ -213,41 +211,40 @@
             <tbody></tbody>
           </table>
           <canvas></canvas>`;
-        c.appendChild(card);
+        container.appendChild(card);
         getWeather(store, card);
       });
     }
 
     async function getWeather(store, card) {
-      const url = `https://api.openweathermap.org/data/2.5/forecast?lat=${store.lat}&lon=${store.lon}&units=metric&lang=ja&appid=${apiKey}`;
-      const data = await fetch(url).then(res => res.json());
+      const res = await fetch(
+        `https://api.openweathermap.org/data/2.5/forecast?lat=${store.lat}&lon=${store.lon}&units=metric&lang=ja&appid=${apiKey}`
+      );
+      const data = await res.json();
+
       const dailyMap = {};
       data.list.forEach(e => {
-        const d = e.dt_txt.split(" ")[0];
-        (dailyMap[d] = dailyMap[d]||[]).push(e);
+        const date = e.dt_txt.split(" ")[0];
+        (dailyMap[date] = dailyMap[date]||[]).push(e);
       });
 
-      // 今日以降のキーを抽出
       const today = new Date();
       today.setHours(0,0,0,0);
       let futureDates = Object.keys(dailyMap)
-        .filter(ds => new Date(ds + "T00:00:00+09:00") >= today);
-
-      // 足りなければ補完
+        .filter(d => new Date(d + "T00:00:00+09:00") >= today);
       if (futureDates.length < 5) {
-        const allDates = Object.keys(dailyMap).sort();
-        for (let d of allDates) {
-          if (!futureDates.includes(d)) {
+        Object.keys(dailyMap).sort().forEach(d => {
+          if (futureDates.length < 5 && !futureDates.includes(d)) {
             futureDates.push(d);
-            if (futureDates.length === 5) break;
           }
-        }
+        });
       }
-
       futureDates = futureDates.slice(0,5);
 
-      const highs = [], lows = [], labels = [];
+      const highs = [], lows = [], chartLabels = [];
       const tbody = card.querySelector("tbody");
+
+      const weekdays = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 
       futureDates.forEach(d => {
         const entries = dailyMap[d];
@@ -256,13 +253,24 @@
         const min = Math.min(...temps).toFixed(1);
         const icon = entries[0].weather[0].icon;
         const desc = entries[0].weather[0].description;
-        const lbl = d.slice(5).replace("-", "/");
-        labels.push(lbl);
+
+        // 日付と曜日
+        const lblDate = d.slice(5).replace("-", "/");
+        const dtObj = new Date(d + "T00:00:00+09:00");
+        const wd = weekdays[dtObj.getDay()];
+        chartLabels.push(lblDate);
+
+        // 曜日色
+        let color = "#ffffff";
+        if (wd === "Sat") color = "#00ffff";
+        if (wd === "Sun") color = "#ff416c";
+
         highs.push(max);
         lows.push(min);
+
         tbody.insertAdjacentHTML("beforeend", `
           <tr>
-            <td>${lbl}</td>
+            <td style="color:${color}">${lblDate} (${wd})</td>
             <td>
               <img class="icon"
                    src="https://openweathermap.org/img/wn/${icon}.png"
@@ -275,19 +283,37 @@
       new Chart(card.querySelector("canvas").getContext("2d"), {
         type: "line",
         data: {
-          labels,
+          labels: chartLabels,
           datasets: [
-            { label: "最高気温 (°C)", data: highs, borderColor: "#ff416c", backgroundColor: "#ff416c22", tension:0.3, borderWidth:2, pointRadius:3 },
-            { label: "最低気温 (°C)", data: lows,  borderColor: "#1e90ff", backgroundColor: "#1e90ff22", tension:0.3, borderWidth:2, pointRadius:3 }
+            {
+              label: "最高気温 (°C)",
+              data: highs,
+              borderColor: "#ff416c",
+              backgroundColor: "#ff416c22",
+              tension: 0.3,
+              borderWidth: 2,
+              pointRadius: 3
+            },
+            {
+              label: "最低気温 (°C)",
+              data: lows,
+              borderColor: "#1e90ff",
+              backgroundColor: "#1e90ff22",
+              tension: 0.3,
+              borderWidth: 2,
+              pointRadius: 3
+            }
           ]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          plugins: { legend:{ labels:{ color:"#ffffff" } } },
+          plugins: {
+            legend: { labels: { color: "#ffffff" } }
+          },
           scales: {
-            x:{ ticks:{ color:"#ffffff" } },
-            y:{ ticks:{ color:"#ffffff" }, grid:{ color:"#2b313d" } }
+            x: { ticks: { color: "#ffffff" } },
+            y: { ticks: { color: "#ffffff" }, grid: { color: "#2b313d" } }
           }
         }
       });
@@ -295,4 +321,3 @@
   </script>
 </body>
 </html>
-```
