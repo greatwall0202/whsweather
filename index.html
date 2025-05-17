@@ -17,9 +17,10 @@
       margin: 0;
       padding: 0;
     }
-    h1, h2 {
+    h1 {
       text-align: center;
       color: #00ffff;
+      padding-top: 1rem;
     }
     #selection {
       text-align: center;
@@ -78,6 +79,11 @@
       font-size: 1.1rem;
       color: #00ffff;
     }
+    .location + div {
+      color: #ffffff;
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+    }
     table {
       width: 100%;
       font-size: 0.85rem;
@@ -87,10 +93,21 @@
       padding: 0.4rem;
       text-align: center;
     }
-    th { color: #8b949e; font-weight: 400; }
-    tr:nth-child(even) { background: rgba(255,255,255,0.05); }
-    img.icon { width: 28px; height: 28px; }
-    canvas { width: 100% !important; max-height: 160px; }
+    th {
+      color: #8b949e;
+      font-weight: 400;
+    }
+    tr:nth-child(even) {
+      background: rgba(255,255,255,0.05);
+    }
+    img.icon {
+      width: 28px;
+      height: 28px;
+    }
+    canvas {
+      width: 100% !important;
+      max-height: 160px;
+    }
   </style>
 </head>
 <body>
@@ -108,35 +125,36 @@
   <script>
     const apiKey = "1a9e7d04d69124aa1b670a87a74a57de";
     const allStores = [
-      { name: "札幌", lat: 43.0747, lon: 141.3419 },
-      { name: "石狩", lat: 43.1992, lon: 141.3214 },
-      { name: "かみのやま", lat: 38.1532, lon: 140.3225 },
-      { name: "仙台", lat: 38.2533, lon: 140.8828 },
-      { name: "つくば", lat: 36.0576, lon: 140.1186 },
-      { name: "前橋", lat: 36.3842, lon: 139.0633 },
-      { name: "野々市", lat: 36.5277, lon: 136.6033 },
-      { name: "射水", lat: 36.7026, lon: 137.116 },
-      { name: "入間", lat: 35.8353, lon: 139.3936 },
-      { name: "新三郷", lat: 35.8845, lon: 139.8712 },
-      { name: "幕張", lat: 35.6598, lon: 140.0433 },
-      { name: "千葉ニュータウン", lat: 35.8058, lon: 140.0986 },
-      { name: "金沢シーサイド", lat: 35.3701, lon: 139.6247 },
-      { name: "川崎", lat: 35.5403, lon: 139.7037 },
-      { name: "多摩境", lat: 35.6066, lon: 139.3574 },
-      { name: "座間", lat: 35.4827, lon: 139.4243 },
-      { name: "浜松", lat: 34.7692, lon: 137.7045 },
-      { name: "岐阜羽島", lat: 35.3167, lon: 136.7206 },
-      { name: "守山", lat: 35.2151, lon: 136.9756 },
-      { name: "中部空港", lat: 34.8583, lon: 136.805 },
-      { name: "京都八幡", lat: 34.8905, lon: 135.687 },
-      { name: "和泉", lat: 34.4805, lon: 135.4223 },
-      { name: "尼崎", lat: 34.7327, lon: 135.4084 },
-      { name: "神戸", lat: 34.6938, lon: 135.1955 },
-      { name: "広島", lat: 34.3963, lon: 132.4596 },
-      { name: "久山", lat: 33.6522, lon: 130.4869 },
-      { name: "北九州", lat: 33.8508, lon: 130.7771 },
-      { name: "鳥栖", lat: 33.3669, lon: 130.5057 },
-      { name: "熊本御船", lat: 32.7294, lon: 130.7802 }
+      { name: "札幌", lat: 43.0747, lon: 141.3419, address: "北海道札幌市清田区清田1条1丁目1-5" },
+      { name: "石狩", lat: 43.1992, lon: 141.3214, address: "北海道石狩市新港南2丁目733-1" },
+      { name: "かみのやま", lat: 38.1532, lon: 140.3225, address: "山形県上山市みはらしの丘21番" },
+      { name: "仙台", lat: 38.2533, lon: 140.8828, address: "宮城県仙台市宮城野区中野三丁目2-2" },
+      { name: "つくば", lat: 36.0576, lon: 140.1186, address: "茨城県つくば市学園の森2-19" },
+      { name: "前橋", lat: 36.3842, lon: 139.0633, address: "群馬県前橋市鶴光路町137-2" },
+      { name: "野々市", lat: 36.5277, lon: 136.6033, address: "石川県野々市市柳町301-1" },
+      { name: "射水", lat: 36.7026, lon: 137.116, address: "富山県射水市鷲塚57-1" },
+      { name: "入間", lat: 35.8353, lon: 139.3936, address: "埼玉県入間市宮寺3169-2" },
+      { name: "新三郷", lat: 35.8845, lon: 139.8712, address: "埼玉県三郷市新三郷ららシティ3-1-2" },
+      { name: "幕張", lat: 35.6598, lon: 140.0433, address: "千葉県千葉市美浜区豊砂1-4" },
+      { name: "千葉ニュータウン", lat: 35.8058, lon: 140.0986, address: "千葉県印西市泉野3-1186-4" },
+      { name: "金沢シーサイド", lat: 35.3701, lon: 139.6247, address: "神奈川県横浜市金沢区幸浦2-6" },
+      { name: "川崎", lat: 35.5403, lon: 139.7037, address: "神奈川県川崎市川崎区池上新町3-1-4" },
+      { name: "多摩境", lat: 35.6066, lon: 139.3574, address: "東京都町田市小山ヶ丘3-6-1" },
+      { name: "座間", lat: 35.4827, lon: 139.4243, address: "神奈川県座間市東原1-13-3" },
+      { name: "浜松", lat: 34.7692, lon: 137.7045, address: "静岡県浜松市東区上西町1020-28" },
+      { name: "岐阜羽島", lat: 35.3167, lon: 136.7206, address: "岐阜県羽島市上中町長間2422-1" },
+      { name: "守山", lat: 35.2151, lon: 136.9756, address: "愛知県名古屋市守山区下志段味南荒田3032-1" },
+      { name: "中部空港", lat: 34.8583, lon: 136.805, address: "愛知県常滑市りんくう町1-25-14" },
+      { name: "京都八幡", lat: 34.8905, lon: 135.687, address: "京都府八幡市欽明台北5番地" },
+      { name: "和泉", lat: 34.4805, lon: 135.4223, address: "大阪府和泉市あゆみ野4-4-45" },
+      { name: "尼崎", lat: 34.7327, lon: 135.4084, address: "兵庫県尼崎市次屋3-13-55" },
+      { name: "神戸", lat: 34.6938, lon: 135.1955, address: "兵庫県神戸市垂水区多聞町小束山868-26" },
+      { name: "広島", lat: 34.3963, lon: 132.4596, address: "広島県広島市南区南蟹屋2-3-4" },
+      { name: "久山", lat: 33.6522, lon: 130.4869, address: "福岡県糟屋郡久山町大字山田字高柳1152-1" },
+      { name: "北九州", lat: 33.8508, lon: 130.7771, address: "福岡県北九州市八幡西区本城学研台1-2-12" },
+      { name: "小郡", lat: 33.3864, lon: 130.5656, address: "福岡県小郡市上岩田字吉田764-1" },
+      { name: "熊本御船", lat: 32.7294, lon: 130.7802, address: "熊本県上益城郡御船町大字小坂字宮田689-1" },
+      { name: "沖縄南城", lat: 26.1475, lon: 127.7555, address: "沖縄県南城市大里字高平高宮城原97-2" }
     ];
 
     const checkboxContainer = document.getElementById("checkboxes");
@@ -186,6 +204,7 @@
         card.className = "card";
         card.innerHTML = `
           <div class="location">Costco ${store.name}</div>
+          <div>${store.address}</div>
           <table><thead><tr><th>日付</th><th>天気</th><th>最高/最低 (°C)</th></tr></thead><tbody></tbody></table>
           <canvas></canvas>`;
         container.appendChild(card);
