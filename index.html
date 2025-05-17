@@ -1,9 +1,3 @@
-<!-- 以下の修正を加えました：
- 1. 日付の横に英語の曜日を追加
- 2. 曜日に応じて色を変更（Sun: 赤, Sat: 青, 平日: 白）
- 3. 住所をGoogleマップのリンクに変更
--->
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -12,22 +6,124 @@
   <title>My Costco Weather</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    body { background-color: #0d1117; color: #ffffff; font-family: "Fira Code", monospace; }
-    h1 { text-align: center; color: #00ffff; padding-top: 1rem; }
-    .location { font-weight: bold; font-size: 1.1rem; color: #00ffff; }
-    table { width: 100%; font-size: 0.85rem; border-collapse: collapse; }
-    th, td { padding: 0.4rem; text-align: center; }
-    .sun { color: #ff5c5c; }
-    .sat { color: #5cbaff; }
-    .weekday { color: #ffffff; }
-    img.icon { width: 28px; height: 28px; }
+    body {
+      background-color: #0d1117;
+      background-image: radial-gradient(circle at center, rgba(0,255,255,0.05) 1px, transparent 1px),
+                        radial-gradient(circle at center, rgba(0,255,255,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      background-position: 0 0, 20px 20px;
+      color: #ffffff;
+      font-family: "Fira Code", monospace;
+      margin: 0;
+      padding: 0;
+    }
+    h1 {
+      text-align: center;
+      color: #00ffff;
+      padding-top: 1rem;
+    }
+    #selection {
+      text-align: center;
+      margin: 1rem auto;
+      max-width: 600px;
+      padding: 0 1rem;
+    }
+    .checkbox-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 0.5rem;
+      justify-content: center;
+      margin-bottom: 1rem;
+    }
+    label {
+      display: flex;
+      align-items: center;
+      font-size: 0.95rem;
+    }
+    input[type="checkbox"] {
+      margin-right: 0.5rem;
+      transform: scale(1.2);
+    }
+    .button-group {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+    button {
+      padding: 0.4rem 1rem;
+      font-size: 0.95rem;
+      background-color: #00ffff;
+      color: #000;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    #container {
+      display: grid;
+      gap: 1.5rem;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      padding: 1.5rem;
+      max-width: 100%;
+      margin: auto;
+    }
+    .card {
+      background: #161b22;
+      border-radius: 12px;
+      padding: 1rem;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.6);
+    }
+    .location {
+      font-weight: bold;
+      font-size: 1.1rem;
+      color: #00ffff;
+    }
+    .location + div {
+      color: #ffffff;
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+    }
+    table {
+      width: 100%;
+      font-size: 0.85rem;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 0.4rem;
+      text-align: center;
+    }
+    th {
+      color: #8b949e;
+      font-weight: 400;
+    }
+    tr:nth-child(even) {
+      background: rgba(255,255,255,0.05);
+    }
+    img.icon {
+      width: 28px;
+      height: 28px;
+    }
+    canvas {
+      width: 100% !important;
+      max-height: 160px;
+    }
   </style>
 </head>
 <body>
   <h1>My Costco Weather</h1>
+  <div id="selection">
+    <p>表示する倉庫店を選んでください（複数選択可）:</p>
+    <div class="button-group">
+      <button onclick="selectAll()">全選択</button>
+      <button onclick="deselectAll()">全解除</button>
+    </div>
+    <div class="checkbox-list" id="checkboxes"></div>
+  </div>
   <div id="container"></div>
+
   <script>
-    const apiKey = "1a9e7d04d69124aa1b670a87a74a57de"; // 元のAPIキー
+    const apiKey = "1a9e7d04d69124aa1b670a87a74a57de";
     const allStores = [
       { name: "札幌", lat: 43.0747, lon: 141.3419, address: "北海道札幌市清田区清田1条1丁目1-5" },
       { name: "石狩", lat: 43.1992, lon: 141.3214, address: "北海道石狩市新港南2丁目733-1" },
@@ -35,8 +131,8 @@
       { name: "仙台", lat: 38.2533, lon: 140.8828, address: "宮城県仙台市宮城野区中野三丁目2-2" },
       { name: "つくば", lat: 36.0576, lon: 140.1186, address: "茨城県つくば市学園の森2-19" },
       { name: "前橋", lat: 36.3842, lon: 139.0633, address: "群馬県前橋市鶴光路町137-2" },
-      { name: "群馬明和", lat: 36.2333, lon: 139.4833, address: "群馬県邑楽郡明和町矢島35-1" },
-      { name: "壬生", lat: 36.4167, lon: 139.8167, address: "栃木県下都賀郡壬生町安塚3360" },
+      { name: "野々市", lat: 36.5277, lon: 136.6033, address: "石川県野々市市柳町301-1" },
+      { name: "射水", lat: 36.7026, lon: 137.116, address: "富山県射水市鷲塚57-1" },
       { name: "入間", lat: 35.8353, lon: 139.3936, address: "埼玉県入間市宮寺3169-2" },
       { name: "新三郷", lat: 35.8845, lon: 139.8712, address: "埼玉県三郷市新三郷ららシティ3-1-2" },
       { name: "幕張", lat: 35.6598, lon: 140.0433, address: "千葉県千葉市美浜区豊砂1-4" },
@@ -48,14 +144,12 @@
       { name: "浜松", lat: 34.7692, lon: 137.7045, address: "静岡県浜松市東区上西町1020-28" },
       { name: "岐阜羽島", lat: 35.3167, lon: 136.7206, address: "岐阜県羽島市上中町長間2422-1" },
       { name: "守山", lat: 35.2151, lon: 136.9756, address: "愛知県名古屋市守山区下志段味南荒田3032-1" },
-      { name: "中部空港", lat: 34.8583, lon: 136.8050, address: "愛知県常滑市りんくう町1-25-14" },
-      { name: "京都八幡", lat: 34.8905, lon: 135.6870, address: "京都府八幡市欽明台北5番地" },
+      { name: "中部空港", lat: 34.8583, lon: 136.805, address: "愛知県常滑市りんくう町1-25-14" },
+      { name: "京都八幡", lat: 34.8905, lon: 135.687, address: "京都府八幡市欽明台北5番地" },
       { name: "和泉", lat: 34.4805, lon: 135.4223, address: "大阪府和泉市あゆみ野4-4-45" },
-      { name: "門真", lat: 34.7386, lon: 135.5861, address: "大阪府門真市松生町1-1" },
       { name: "尼崎", lat: 34.7327, lon: 135.4084, address: "兵庫県尼崎市次屋3-13-55" },
       { name: "神戸", lat: 34.6938, lon: 135.1955, address: "兵庫県神戸市垂水区多聞町小束山868-26" },
       { name: "広島", lat: 34.3963, lon: 132.4596, address: "広島県広島市南区南蟹屋2-3-4" },
-      { name: "南アルプス", lat: 35.6125, lon: 138.4658, address: "山梨県南アルプス市在家塚字中割384" },
       { name: "久山", lat: 33.6522, lon: 130.4869, address: "福岡県糟屋郡久山町大字山田字高柳1152-1" },
       { name: "北九州", lat: 33.8508, lon: 130.7771, address: "福岡県北九州市八幡西区本城学研台1-2-12" },
       { name: "小郡", lat: 33.3864, lon: 130.5656, address: "福岡県小郡市上岩田字吉田764-1" },
@@ -63,28 +157,55 @@
       { name: "沖縄南城", lat: 26.1475, lon: 127.7555, address: "沖縄県南城市大里字高平高宮城原97-2" }
     ];
 
-    function getWeekdayName(dateStr) {
-      const date = new Date(dateStr);
-      const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-      return days[date.getDay()];
+    const checkboxContainer = document.getElementById("checkboxes");
+    const savedIndexes = JSON.parse(localStorage.getItem("selectedCostcos") || "[]");
+
+    allStores.forEach((store, index) => {
+      const id = `store-${index}`;
+      const label = document.createElement("label");
+      const input = document.createElement("input");
+      input.type = "checkbox";
+      input.value = index;
+      input.id = id;
+      if (savedIndexes.includes(index)) input.checked = true;
+      label.appendChild(input);
+      label.append(store.name);
+      checkboxContainer.appendChild(label);
+    });
+
+    function getSelectedIndexes() {
+      return Array.from(checkboxContainer.querySelectorAll("input[type='checkbox']:checked")).map(c => parseInt(c.value));
     }
 
-    function getDayClass(day) {
-      if (day === "Sun") return "sun";
-      if (day === "Sat") return "sat";
-      return "weekday";
+    function updateDisplay() {
+      const selected = getSelectedIndexes();
+      localStorage.setItem("selectedCostcos", JSON.stringify(selected));
+      renderStores(selected.map(i => allStores[i]));
     }
+
+    function selectAll() {
+      checkboxContainer.querySelectorAll("input[type='checkbox']").forEach(cb => cb.checked = true);
+      updateDisplay();
+    }
+
+    function deselectAll() {
+      checkboxContainer.querySelectorAll("input[type='checkbox']").forEach(cb => cb.checked = false);
+      updateDisplay();
+    }
+
+    checkboxContainer.addEventListener("change", updateDisplay);
+    updateDisplay();
 
     function renderStores(stores) {
       const container = document.getElementById("container");
       container.innerHTML = "";
       stores.forEach(store => {
         const card = document.createElement("div");
-        const gmap = `https://www.google.com/maps/search/?q=${encodeURIComponent(store.address)}`;
+        card.className = "card";
         card.innerHTML = `
           <div class="location">Costco ${store.name}</div>
-          <div><a href="${gmap}" target="_blank" style="color:#00ffff">${store.address}</a></div>
-          <table><thead><tr><th>日付 / 曜日</th><th>天気</th><th>最高/最低 (°C)</th></tr></thead><tbody></tbody></table>
+          <div>${store.address}</div>
+          <table><thead><tr><th>日付</th><th>天気</th><th>最高/最低 (°C)</th></tr></thead><tbody></tbody></table>
           <canvas></canvas>`;
         container.appendChild(card);
         getWeather(store, card);
@@ -102,6 +223,7 @@
       });
 
       const dates = Object.keys(dailyMap).slice(0, 5);
+      const highs = [], lows = [], labels = [];
       const tbody = card.querySelector("tbody");
 
       dates.forEach(date => {
@@ -111,19 +233,34 @@
         const min = Math.min(...temps).toFixed(1);
         const icon = entries[0].weather[0].icon;
         const desc = entries[0].weather[0].description;
-        const day = getWeekdayName(date);
-        const dayClass = getDayClass(day);
-
+        labels.push(date.slice(5).replace("-", "/"));
+        highs.push(max);
+        lows.push(min);
         tbody.insertAdjacentHTML("beforeend", `
-          <tr>
-            <td class="${dayClass}">${date} (${day})</td>
-            <td><img class="icon" src="https://openweathermap.org/img/wn/${icon}.png" alt="${desc}" title="${desc}" /></td>
-            <td>${max} / ${min}</td>
-          </tr>`);
+          <tr><td>${labels[labels.length-1]}</td><td><img class="icon" src="https://openweathermap.org/img/wn/${icon}.png" alt="${desc}" title="${desc}" /></td><td>${max} / ${min}</td></tr>`);
+      });
+
+      const ctx = card.querySelector("canvas").getContext("2d");
+      new Chart(ctx, {
+        type: "line",
+        data: {
+          labels,
+          datasets: [
+            { label: "最高気温 (°C)", data: highs, borderColor: "#ff416c", backgroundColor: "#ff416c22", tension: .3, borderWidth: 2, pointRadius: 3 },
+            { label: "最低気温 (°C)", data: lows, borderColor: "#1e90ff", backgroundColor: "#1e90ff22", tension: .3, borderWidth: 2, pointRadius: 3 }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: "#ffffff" } } },
+          scales: {
+            x: { ticks: { color: "#ffffff" } },
+            y: { ticks: { color: "#ffffff" }, grid: { color: "#2b313d" } }
+          }
+        }
       });
     }
-
-    renderStores(allStores);
   </script>
 </body>
 </html>
