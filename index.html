@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>My Costco Weather</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      background-color: #0d1117;
+      background-image: radial-gradient(circle at center, rgba(0,255,255,0.05) 1px, transparent 1px),
+                        radial-gradient(circle at center, rgba(0,255,255,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      background-position: 0 0, 20px 20px;
+      color: #ffffff;
+      font-family: "Fira Code", monospace;
+      margin: 0;
+      padding: 0;
+    }
+    h1, h2 {
+      text-align: center;
+      color: #00ffff;
+    }
+    #selection {
+      text-align: center;
+      margin: 1rem auto;
+      max-width: 600px;
+      padding: 0 1rem;
+    }
+    .checkbox-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 0.5rem;
+      justify-content: center;
+      margin-bottom: 1rem;
+    }
+    label {
+      display: flex;
+      align-items: center;
+      font-size: 0.95rem;
+    }
+    input[type="checkbox"] {
+      margin-right: 0.5rem;
+      transform: scale(1.2);
+    }
+    .button-group {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+    button {
+      padding: 0.4rem 1rem;
+      font-size: 0.95rem;
+      background-color: #00ffff;
+      color: #000;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    #container {
+      display: grid;
+      gap: 1.5rem;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      padding: 1.5rem;
+      max-width: 100%;
+      margin: auto;
+    }
+    .card {
+      background: #161b22;
+      border-radius: 12px;
+      padding: 1rem;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.6);
+    }
+    .location {
+      font-weight: bold;
+      font-size: 1.1rem;
+      color: #00ffff;
+    }
+    table {
+      width: 100%;
+      font-size: 0.85rem;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 0.4rem;
+      text-align: center;
+    }
+    th { color: #8b949e; font-weight: 400; }
+    tr:nth-child(even) { background: rgba(255,255,255,0.05); }
+    img.icon { width: 28px; height: 28px; }
+    canvas { width: 100% !important; max-height: 160px; }
+  </style>
+</head>
+<body>
+  <h1>My Costco Weather</h1>
+  <div id="selection">
+    <p>表示する倉庫店を選んでください（複数選択可）:</p>
+    <div class="button-group">
+      <button onclick="selectAll()">全選択</button>
+      <button onclick="deselectAll()">全解除</button>
+    </div>
+    <div class="checkbox-list" id="checkboxes"></div>
+  </div>
+  <div id="container"></div>
+
+  <script>
+    const apiKey = "1a9e7d04d69124aa1b670a87a74a57de";
+    const allStores = [
+      { name: "札幌", lat: 43.0747, lon: 141.3419 },
+      { name: "石狩", lat: 43.1992, lon: 141.3214 },
+      { name: "かみのやま", lat: 38.1532, lon: 140.3225 },
+      { name: "仙台", lat: 38.2533, lon: 140.8828 },
+      { name: "つくば", lat: 36.0576, lon: 140.1186 },
+      { name: "前橋", lat: 36.3842, lon: 139.0633 },
+      { name: "野々市", lat: 36.5277, lon: 136.6033 },
+      { name: "射水", lat: 36.7026, lon: 137.116 },
+      { name: "入間", lat: 35.8353, lon: 139.3936 },
+      { name: "新三郷", lat: 35.8845, lon: 139.8712 },
+      { name: "幕張", lat: 35.6598, lon: 140.0433 },
+      { name: "千葉ニュータウン", lat: 35.8058, lon: 140.0986 },
+      { name: "金沢シーサイド", lat: 35.3701, lon: 139.6247 },
+      { name: "川崎", lat: 35.5403, lon: 139.7037 },
+      { name: "多摩境", lat: 35.6066, lon: 139.3574 },
+      { name: "座間", lat: 35.4827, lon: 139.4243 },
+      { name: "浜松", lat: 34.7692, lon: 137.7045 },
+      { name: "岐阜羽島", lat: 35.3167, lon: 136.7206 },
+      { name: "守山", lat: 35.2151, lon: 136.9756 },
+      { name: "中部空港", lat: 34.8583, lon: 136.805 },
+      { name: "京都八幡", lat: 34.8905, lon: 135.687 },
+      { name: "和泉", lat: 34.4805, lon: 135.4223 },
+      { name: "尼崎", lat: 34.7327, lon: 135.4084 },
+      { name: "神戸", lat: 34.6938, lon: 135.1955 },
+      { name: "広島", lat: 34.3963, lon: 132.4596 },
+      { name: "久山", lat: 33.6522, lon: 130.4869 },
+      { name: "北九州", lat: 33.8508, lon: 130.7771 },
+      { name: "鳥栖", lat: 33.3669, lon: 130.5057 },
+      { name: "熊本御船", lat: 32.7294, lon: 130.7802 }
+    ];
+
+    const checkboxContainer = document.getElementById("checkboxes");
+    const savedIndexes = JSON.parse(localStorage.getItem("selectedCostcos") || "[]");
+
+    allStores.forEach((store, index) => {
+      const id = `store-${index}`;
+      const label = document.createElement("label");
+      const input = document.createElement("input");
+      input.type = "checkbox";
+      input.value = index;
+      input.id = id;
+      if (savedIndexes.includes(index)) input.checked = true;
+      label.appendChild(input);
+      label.append(store.name);
+      checkboxContainer.appendChild(label);
+    });
+
+    function getSelectedIndexes() {
+      return Array.from(checkboxContainer.querySelectorAll("input[type='checkbox']:checked")).map(c => parseInt(c.value));
+    }
+
+    function updateDisplay() {
+      const selected = getSelectedIndexes();
+      localStorage.setItem("selectedCostcos", JSON.stringify(selected));
+      renderStores(selected.map(i => allStores[i]));
+    }
+
+    function selectAll() {
+      checkboxContainer.querySelectorAll("input[type='checkbox']").forEach(cb => cb.checked = true);
+      updateDisplay();
+    }
+
+    function deselectAll() {
+      checkboxContainer.querySelectorAll("input[type='checkbox']").forEach(cb => cb.checked = false);
+      updateDisplay();
+    }
+
+    checkboxContainer.addEventListener("change", updateDisplay);
+    updateDisplay();
+
+    function renderStores(stores) {
+      const container = document.getElementById("container");
+      container.innerHTML = "";
+      stores.forEach(store => {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+          <div class="location">Costco ${store.name}</div>
+          <table><thead><tr><th>日付</th><th>天気</th><th>最高/最低 (°C)</th></tr></thead><tbody></tbody></table>
+          <canvas></canvas>`;
+        container.appendChild(card);
+        getWeather(store, card);
+      });
+    }
+
+    async function getWeather(store, card) {
+      const url = `https://api.openweathermap.org/data/2.5/forecast?lat=${store.lat}&lon=${store.lon}&units=metric&lang=ja&appid=${apiKey}`;
+      const data = await fetch(url).then(r => r.json());
+      const dailyMap = {};
+      data.list.forEach(entry => {
+        const date = entry.dt_txt.split(" ")[0];
+        if (!dailyMap[date]) dailyMap[date] = [];
+        dailyMap[date].push(entry);
+      });
+
+      const dates = Object.keys(dailyMap).slice(0, 5);
+      const highs = [], lows = [], labels = [];
+      const tbody = card.querySelector("tbody");
+
+      dates.forEach(date => {
+        const entries = dailyMap[date];
+        const temps = entries.map(e => e.main.temp);
+        const max = Math.max(...temps).toFixed(1);
+        const min = Math.min(...temps).toFixed(1);
+        const icon = entries[0].weather[0].icon;
+        const desc = entries[0].weather[0].description;
+        labels.push(date.slice(5).replace("-", "/"));
+        highs.push(max);
+        lows.push(min);
+        tbody.insertAdjacentHTML("beforeend", `
+          <tr><td>${labels[labels.length-1]}</td><td><img class="icon" src="https://openweathermap.org/img/wn/${icon}.png" alt="${desc}" title="${desc}" /></td><td>${max} / ${min}</td></tr>`);
+      });
+
+      const ctx = card.querySelector("canvas").getContext("2d");
+      new Chart(ctx, {
+        type: "line",
+        data: {
+          labels,
+          datasets: [
+            { label: "最高気温 (°C)", data: highs, borderColor: "#ff416c", backgroundColor: "#ff416c22", tension: .3, borderWidth: 2, pointRadius: 3 },
+            { label: "最低気温 (°C)", data: lows, borderColor: "#1e90ff", backgroundColor: "#1e90ff22", tension: .3, borderWidth: 2, pointRadius: 3 }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: "#ffffff" } } },
+          scales: {
+            x: { ticks: { color: "#ffffff" } },
+            y: { ticks: { color: "#ffffff" }, grid: { color: "#2b313d" } }
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>
